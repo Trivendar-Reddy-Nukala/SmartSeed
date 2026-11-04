@@ -1,0 +1,22 @@
+{
+  "name": "@smartseed/blockchain",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start:network": "bash network/scripts/start-network.sh",
+    "stop:network": "bash network/scripts/stop-network.sh",
+    "deploy:chaincode": "bash network/scripts/deploy-chaincode.sh"
+  },
+  "dependencies": {
+    "fabric-network": "^2.2.20",
+    "fabric-ca-client": "^2.2.20",
+    "fabric-common": "^2.2.20",
+    "crypto": "^1.0.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.0"
+  }
+}

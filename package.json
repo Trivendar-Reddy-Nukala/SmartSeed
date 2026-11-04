@@ -1,0 +1,32 @@
+{
+  "name": "smartseed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blockchain-Based Seed Supply Chain Traceability, Counterfeit Detection and AI-Powered Risk Management Platform",
+  "workspaces": [
+    "packages/shared",
+    "packages/backend",
+    "packages/web",
+    "packages/blockchain"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:web\"",
+    "dev:backend": "npm run dev -w packages/backend",
+    "dev:web": "npm run dev -w packages/web",
+    "build": "npm run build -w packages/shared && npm run build -w packages/backend && npm run build -w packages/web",
+    "build:shared": "npm run build -w packages/shared",
+    "build:backend": "npm run build -w packages/backend",
+    "build:web": "npm run build -w packages/web",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "test": "npm run test -w packages/backend",
+    "db:migrate": "npm run db:migrate -w packages/backend",
+    "db:seed": "npm run db:seed -w packages/backend",
+    "docker:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  }
+}
+

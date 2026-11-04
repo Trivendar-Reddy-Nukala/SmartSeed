@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "SmartSeed",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "search": "Search",
+    "noData": "No data available"
+  },
+  "auth": {
+    "welcome": "Welcome to SmartSeed",
+    "subtitle": "Verify your seeds, protect your harvest",
+    "phone": "Phone Number",
+    "name": "Your Name",
+    "register": "Register",
+    "continue": "Continue as Guest"
+  },
+  "home": {
+    "title": "Home",
+    "scanQr": "Scan Seed QR Code",
+    "scanDescription": "Scan the QR code on your seed packet to verify its authenticity",
+    "recentScans": "Recent Verifications",
+    "noScans": "No verifications yet. Scan a seed QR code to get started.",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "scanner": {
+    "title": "Scan QR Code",
+    "instruction": "Point your camera at the QR code on the seed packet",
+    "scanning": "Scanning...",
+    "noCamera": "Camera permission is required to scan QR codes",
+    "grantPermission": "Grant Permission",
+    "invalidQr": "This QR code is not a valid SmartSeed code"
+  },
+  "verification": {
+    "title": "Verification Result",
+    "verified": "Verified",
+    "suspicious": "Caution Required",
+    "warning": "Warning",
+    "unverified": "Could Not Verify",
+    "verifiedMessage": "No known suspicious activity detected for this product.",
+    "suspiciousMessage": "Additional verification is recommended for this product.",
+    "warningMessage": "Serious warning - avoid relying on this product until verified by authorities.",
+    "unverifiedMessage": "We could not verify this product. Please contact the manufacturer.",
+    "productInfo": "Product Information",
+    "productName": "Product Name",
+    "manufacturer": "Manufacturer",
+    "batchNumber": "Batch Number",
+    "mfgDate": "Manufacturing Date",
+    "expiryDate": "Expiry Date",
+    "expired": "EXPIRED",
+    "certifications": "Certifications",
+    "supplyChain": "Supply Chain Journey",
+    "riskStatus": "Risk Status",
+    "riskScore": "Risk Score",
+    "riskLevel": "Risk Level",
+    "reportSuspicious": "Report Suspicious Product",
+    "viewPassport": "View Digital Product Passport"
+  },
+  "report": {
+    "title": "Report Suspicious Product",
+    "description": "Help us fight counterfeit seeds. Describe what seems wrong.",
+    "reason": "Reason for suspicion",
+    "details": "Additional details (optional)",
+    "submit": "Submit Report",
+    "submitted": "Report submitted successfully. Thank you for helping protect farmers.",
+    "reasons": {
+      "packaging": "Packaging looks different",
+      "price": "Price seems too low",
+      "seller": "Seller seems unauthorized",
+      "quality": "Seed quality seems poor",
+      "other": "Other reason"
+    }
+  },
+  "passport": {
+    "title": "Digital Product Passport",
+    "productInfo": "Product Information",
+    "batchInfo": "Batch Information",
+    "manufacturerInfo": "Manufacturer Information",
+    "journey": "Supply Chain Journey",
+    "blockchain": "Blockchain Verification",
+    "verified": "Verified on blockchain",
+    "notVerified": "Not yet verified",
+    "totalTransactions": "Total Transactions"
+  },
+  "history": {
+    "title": "Verification History",
+    "noHistory": "No verification history yet"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "noNotifications": "No notifications",
+    "markAllRead": "Mark all as read"
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "about": "About SmartSeed",
+    "version": "Version",
+    "logout": "Logout"
+  },
+  "languages": {
+    "en": "English",
+    "te": "తెలుగు (Telugu)",
+    "hi": "हिन्दी (Hindi)"
+  },
+  "offline": {
+    "notice": "You are offline. Showing cached data.",
+    "outdatedWarning": "This information may be outdated. Please verify online."
+  }
+}

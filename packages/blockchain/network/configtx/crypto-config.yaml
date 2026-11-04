@@ -1,0 +1,37 @@
+# =============================================================================
+# SmartSeed Crypto Configuration
+# Generates crypto material for the Hyperledger Fabric network
+# =============================================================================
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: smartseed.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS:
+          - localhost
+          - 127.0.0.1
+
+PeerOrgs:
+  - Name: Manufacturer
+    Domain: manufacturer.smartseed.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+        - 127.0.0.1
+    Users:
+      Count: 1
+
+  - Name: Regulator
+    Domain: regulator.smartseed.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+        - 127.0.0.1
+    Users:
+      Count: 1

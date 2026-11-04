@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartseed-ai-engine"
+version = "0.1.0"
+description = "SmartSeed AI/ML Engine — anomaly detection, risk scoring, and AI-powered investigation for supply chain integrity."
+readme = "README.md"
+license = {text = "Proprietary"}
+requires-python = ">=3.11"
+authors = [
+    {name = "SmartSeed Team"}
+]
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.32.0",
+    "pydantic==2.10.0",
+    "scikit-learn==1.5.0",
+    "pandas==2.2.0",
+    "numpy==1.26.0",
+    "xgboost==2.1.0",
+    "joblib==1.4.0",
+    "httpx==0.28.0",
+    "python-dotenv==1.0.0",
+    "structlog==24.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.28.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

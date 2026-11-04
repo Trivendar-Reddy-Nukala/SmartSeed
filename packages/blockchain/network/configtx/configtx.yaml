@@ -1,0 +1,160 @@
+# =============================================================================
+# SmartSeed Hyperledger Fabric Channel Configuration
+# =============================================================================
+
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../crypto-config/ordererOrganizations/smartseed.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.smartseed.com:7050
+
+  - &ManufacturerOrg
+    Name: ManufacturerOrg
+    ID: ManufacturerMSP
+    MSPDir: ../crypto-config/peerOrganizations/manufacturer.smartseed.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.peer', 'ManufacturerMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.manufacturer.smartseed.com
+        Port: 7051
+
+  - &RegulatorOrg
+    Name: RegulatorOrg
+    ID: RegulatorMSP
+    MSPDir: ../crypto-config/peerOrganizations/regulator.smartseed.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('RegulatorMSP.admin', 'RegulatorMSP.peer', 'RegulatorMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('RegulatorMSP.admin', 'RegulatorMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('RegulatorMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('RegulatorMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.regulator.smartseed.com
+        Port: 9051
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.smartseed.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.smartseed.com
+        Port: 7050
+        ClientTLSCert: ../crypto-config/ordererOrganizations/smartseed.com/orderers/orderer.smartseed.com/tls/server.crt
+        ServerTLSCert: ../crypto-config/ordererOrganizations/smartseed.com/orderers/orderer.smartseed.com/tls/server.crt
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+  Capabilities:
+    <<: *OrdererCapabilities
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  SmartSeedOrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+    Consortiums:
+      SmartSeedConsortium:
+        Organizations:
+          - *ManufacturerOrg
+          - *RegulatorOrg
+
+  SmartSeedChannel:
+    Consortium: SmartSeedConsortium
+    <<: *ChannelDefaults
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *ManufacturerOrg
+        - *RegulatorOrg

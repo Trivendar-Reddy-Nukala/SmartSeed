@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+
+# Docker
+docker-compose.override.yml
+
+# Blockchain
+packages/blockchain/wallet/
+packages/blockchain/network/crypto-config/crypto-config/
+packages/blockchain/network/channel-artifacts/
+
+# AI Engine
+services/ai-engine/__pycache__/
+services/ai-engine/.venv/
+services/ai-engine/app/__pycache__/
+*.pyc
+*.pyo
+
+# Mobile
+packages/mobile/.expo/
+packages/mobile/android/
+packages/mobile/ios/
+
+# Object Storage
+.minio.sys/
+data/
+
