@@ -19,7 +19,7 @@ export class TenantsService {
       });
     }
 
-    const countResult = await query.clone().count('id as count').first();
+    const countResult = await query.clone().clearOrder().count('id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const tenants = await query

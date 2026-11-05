@@ -8,19 +8,22 @@ import { blockchainService } from '../blockchain/blockchain.service';
 import type { CreateTransferInput } from './transfers.validation';
 
 export class TransfersService {
-  async list(tenantId: string, page = 1, pageSize = 20, status?: string, batchId?: string) {
+  async list(tenantId?: string, page = 1, pageSize = 20, status?: string, batchId?: string) {
     const db = getDb();
     let query = db('transfers')
-      .where({ 'transfers.tenant_id': tenantId })
       .leftJoin('seed_batches', 'transfers.batch_id', 'seed_batches.id')
       .leftJoin('users as sender', 'transfers.sender_id', 'sender.id')
       .leftJoin('users as receiver', 'transfers.receiver_id', 'receiver.id')
       .orderBy('transfers.created_at', 'desc');
 
+    if (tenantId) {
+      query = query.where({ 'transfers.tenant_id': tenantId });
+    }
+
     if (status) query = query.where('transfers.status', status);
     if (batchId) query = query.where('transfers.batch_id', batchId);
 
-    const countResult = await query.clone().count('transfers.id as count').first();
+    const countResult = await query.clone().clearOrder().count('transfers.id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const transfers = await query
@@ -36,10 +39,10 @@ export class TransfersService {
     return { data: transfers, meta: { page, pageSize, totalCount, totalPages: Math.ceil(totalCount / pageSize) } };
   }
 
-  async getById(id: string, tenantId: string) {
+  async getById(id: string, tenantId?: string) {
     const db = getDb();
-    const transfer = await db('transfers')
-      .where({ 'transfers.id': id, 'transfers.tenant_id': tenantId })
+    let query = db('transfers')
+      .where({ 'transfers.id': id })
       .leftJoin('seed_batches', 'transfers.batch_id', 'seed_batches.id')
       .leftJoin('users as sender', 'transfers.sender_id', 'sender.id')
       .leftJoin('users as receiver', 'transfers.receiver_id', 'receiver.id')
@@ -48,8 +51,13 @@ export class TransfersService {
         'seed_batches.batch_number', 'seed_batches.product_id',
         'sender.first_name as sender_first_name', 'sender.last_name as sender_last_name', 'sender.email as sender_email',
         'receiver.first_name as receiver_first_name', 'receiver.last_name as receiver_last_name', 'receiver.email as receiver_email',
-      )
-      .first();
+      );
+
+    if (tenantId) {
+      query = query.where({ 'transfers.tenant_id': tenantId });
+    }
+
+    const transfer = await query.first();
     if (!transfer) throw new AppError('Transfer not found', 404, 'NOT_FOUND');
     return transfer;
   }
@@ -228,6 +236,16 @@ export class TransfersService {
           location: transfer.destination_location,
         });
       }
+
+      // Recalculate total active quantity in circulation across all holders
+      const totalInventory = await trx('inventory')
+        .where({ batch_id: transfer.batch_id, tenant_id: tenantId })
+        .sum('quantity as total')
+        .first();
+      const currentTotal = parseInt(totalInventory?.total as string || '0', 10);
+      await trx('seed_batches')
+        .where({ id: transfer.batch_id })
+        .update({ current_quantity: currentTotal, updated_at: new Date() });
 
       // Supply chain event
       await trx('supply_chain_events').insert({

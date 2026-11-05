@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { batchesService, qrService, riskService } from '../../services';
+import { useAuthStore } from '../../stores/auth.store';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -12,13 +13,32 @@ import toast from 'react-hot-toast';
 
 export function BatchDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canManageBatch = user?.role === 'manufacturer' || user?.role === 'platform_admin';
+
   const { data: batch, isLoading } = useQuery({ queryKey: ['batch', id], queryFn: () => batchesService.getById(id!) });
   const { data: timeline } = useQuery({ queryKey: ['batch-timeline', id], queryFn: () => batchesService.getTimeline(id!) });
   const { data: qrCodes } = useQuery({ queryKey: ['batch-qr', id], queryFn: () => qrService.listByBatch(id!) });
   const { data: riskData } = useQuery({ queryKey: ['batch-risk', id], queryFn: () => riskService.getBatchRisk(id!) });
 
-  const assessMutation = useMutation({ mutationFn: () => riskService.assessBatch(id!), onSuccess: () => toast.success('Risk assessment completed') });
-  const generateQrMutation = useMutation({ mutationFn: () => qrService.generate({ batchId: id!, count: 1 }), onSuccess: () => toast.success('QR code generated') });
+  const assessMutation = useMutation({
+    mutationFn: () => riskService.assessBatch(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batch-risk', id] });
+      toast.success('Risk assessment completed');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error?.message || 'Risk assessment failed'),
+  });
+
+  const generateQrMutation = useMutation({
+    mutationFn: () => qrService.generate({ batchId: id!, count: 1 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batch-qr', id] });
+      toast.success('QR code generated');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error?.message || 'QR generation failed'),
+  });
 
   if (isLoading) return <PageLoader />;
   if (!batch) return <div>Batch not found</div>;
@@ -33,10 +53,12 @@ export function BatchDetailPage() {
           <h1 className="text-2xl font-bold">{batch.batch_number}</h1>
           <p className="text-gray-500">{batch.product_name} — {batch.crop_type} / {batch.seed_variety}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => assessMutation.mutate()} loading={assessMutation.isPending}><RefreshCw className="w-4 h-4" /> Assess Risk</Button>
-          <Button variant="outline" onClick={() => generateQrMutation.mutate()} loading={generateQrMutation.isPending}>Generate QR</Button>
-        </div>
+        {canManageBatch && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => assessMutation.mutate()} loading={assessMutation.isPending}><RefreshCw className="w-4 h-4" /> Assess Risk</Button>
+            <Button variant="outline" onClick={() => generateQrMutation.mutate()} loading={generateQrMutation.isPending}>Generate QR</Button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -66,7 +88,9 @@ export function BatchDetailPage() {
             <div className="text-center py-4">
               <ShieldCheck className="w-12 h-12 text-gray-300 mx-auto" />
               <p className="mt-2 text-sm text-gray-500">No risk assessment yet</p>
-              <Button size="sm" className="mt-3" onClick={() => assessMutation.mutate()}>Run Assessment</Button>
+              {canManageBatch && (
+                <Button size="sm" className="mt-3" onClick={() => assessMutation.mutate()} loading={assessMutation.isPending}>Run Assessment</Button>
+              )}
             </div>
           )}
         </Card>
@@ -101,7 +125,16 @@ export function BatchDetailPage() {
       </Card>
 
       {/* QR Codes */}
-      <Card title="QR Codes" actions={<Button size="sm" variant="outline" onClick={() => generateQrMutation.mutate()}>Generate New</Button>}>
+      <Card
+        title="QR Codes"
+        actions={
+          canManageBatch ? (
+            <Button size="sm" variant="outline" onClick={() => generateQrMutation.mutate()} loading={generateQrMutation.isPending}>
+              Generate New
+            </Button>
+          ) : undefined
+        }
+      >
         {qrCodes?.length ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {qrCodes.slice(0, 8).map((qr: any) => (

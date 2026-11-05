@@ -78,7 +78,12 @@ export function BatchesPage() {
                         <td className="py-3"><p>{b.product_name}</p><p className="text-xs text-gray-500">{b.crop_type}</p></td>
                         <td className="py-3 text-gray-500">{formatDate(b.manufacturing_date)}</td>
                         <td className="py-3 text-gray-500">{formatDate(b.expiry_date)}</td>
-                        <td className="py-3">{formatNumber(b.current_quantity)} / {formatNumber(b.initial_quantity)}</td>
+                        <td className="py-3">
+                          <div>
+                            <span className="font-semibold text-gray-900">{formatNumber(b.my_quantity !== undefined ? b.my_quantity : b.current_quantity)} in hand</span>
+                            <span className="text-xs text-gray-400 block">Batch total: {formatNumber(b.current_quantity)} / {formatNumber(b.initial_quantity)}</span>
+                          </div>
+                        </td>
                         <td className="py-3"><Badge variant="status" value={b.status}>{b.status.replace(/_/g, ' ')}</Badge></td>
                         <td className="py-3">{risk ? <Badge variant="risk" value={risk.risk_level}>{risk.score}</Badge> : <span className="text-gray-400">—</span>}</td>
                         <td className="py-3"><button className="p-1.5 rounded hover:bg-gray-100" onClick={e => { e.stopPropagation(); navigate(`/batches/${b.id}`); }}><Eye className="w-4 h-4" /></button></td>

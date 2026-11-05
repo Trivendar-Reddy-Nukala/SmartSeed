@@ -8,7 +8,7 @@ import { analyticsService } from './analytics.service';
 export class AnalyticsController {
   async getOverview(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await analyticsService.getOverview(req.tenantId);
+      const data = await analyticsService.getOverview(req.tenantId, req.user?.userId, req.user?.role);
       res.json({ success: true, data });
     } catch (error) { next(error); }
   }

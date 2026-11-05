@@ -21,7 +21,7 @@ export const apiLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 login attempts per window
+  max: config.app.isDevelopment ? 1000 : 20, // generous in dev, strict in prod
   standardHeaders: true,
   legacyHeaders: false,
   message: {

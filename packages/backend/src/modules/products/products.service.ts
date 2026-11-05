@@ -7,9 +7,10 @@ import { AppError } from '../../middleware/errorHandler';
 import type { CreateProductInput } from './products.validation';
 
 export class ProductsService {
-  async list(tenantId: string, page = 1, pageSize = 20, search?: string, cropType?: string) {
+  async list(tenantId?: string, page = 1, pageSize = 20, search?: string, cropType?: string) {
     const db = getDb();
-    let query = db('products').where({ tenant_id: tenantId, is_active: true }).orderBy('created_at', 'desc');
+    let query = db('products').where({ is_active: true }).orderBy('created_at', 'desc');
+    if (tenantId) query = query.where({ tenant_id: tenantId });
 
     if (search) {
       query = query.where((qb) => {
@@ -20,7 +21,7 @@ export class ProductsService {
     }
     if (cropType) query = query.where({ crop_type: cropType });
 
-    const countResult = await query.clone().count('id as count').first();
+    const countResult = await query.clone().clearOrder().count('id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const products = await query
@@ -32,8 +33,10 @@ export class ProductsService {
     return { data: products, meta: { page, pageSize, totalCount, totalPages: Math.ceil(totalCount / pageSize) } };
   }
 
-  async getById(id: string, tenantId: string) {
-    const product = await getDb()('products').where({ id, tenant_id: tenantId }).first();
+  async getById(id: string, tenantId?: string) {
+    let query = getDb()('products').where({ id });
+    if (tenantId) query = query.where({ tenant_id: tenantId });
+    const product = await query.first();
     if (!product) throw new AppError('Product not found', 404, 'NOT_FOUND');
     return product;
   }

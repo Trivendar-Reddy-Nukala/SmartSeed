@@ -21,7 +21,7 @@ export class NotificationsService {
     if (isRead === 'true') query = query.where({ is_read: true });
     if (isRead === 'false') query = query.where({ is_read: false });
 
-    const countResult = await query.clone().count('id as count').first();
+    const countResult = await query.clone().clearOrder().count('id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const notifications = await query.offset((page - 1) * pageSize).limit(pageSize);

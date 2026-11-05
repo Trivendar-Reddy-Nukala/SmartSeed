@@ -60,10 +60,18 @@ export class AuthService {
   async register(input: RegisterTenantInput) {
     const db = getDb();
 
-    // Check slug uniqueness
-    const existingTenant = await db('tenants').where({ slug: input.slug }).first();
-    if (existingTenant) {
-      throw new AppError('Organization slug is already taken', 409, 'SLUG_TAKEN');
+    // Auto-generate slug from company name if not provided
+    let baseSlug = (input.slug || input.companyName)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (!baseSlug) baseSlug = 'org';
+
+    let finalSlug = baseSlug;
+    let counter = 1;
+    while (await db('tenants').where({ slug: finalSlug }).first()) {
+      finalSlug = `${baseSlug}-${counter++}`;
     }
 
     // Check email uniqueness
@@ -78,8 +86,8 @@ export class AuthService {
     const result = await db.transaction(async (trx) => {
       const [tenant] = await trx('tenants').insert({
         name: input.companyName,
-        slug: input.slug,
-        status: 'pending', // Requires platform admin approval
+        slug: finalSlug,
+        status: 'active',
         subscription_plan: input.subscriptionPlan,
         contact_email: input.contactEmail,
         contact_phone: input.contactPhone,
@@ -105,6 +113,95 @@ export class AuthService {
         max_users: input.subscriptionPlan === 'enterprise' ? 200 : input.subscriptionPlan === 'professional' ? 50 : 10,
         max_batches_per_month: input.subscriptionPlan === 'enterprise' ? 5000 : input.subscriptionPlan === 'professional' ? 500 : 100,
         max_qr_codes: input.subscriptionPlan === 'enterprise' ? 500000 : input.subscriptionPlan === 'professional' ? 50000 : 10000,
+      });
+
+      // Auto-provision starter catalog and inventory for immediate platform usability
+      const [starterProduct] = await trx('products').insert({
+        tenant_id: tenant.id,
+        name: 'Certified Samba Mahsuri Paddy',
+        brand_name: `${input.companyName} Seeds`,
+        crop_type: 'Paddy / Rice',
+        seed_variety: 'BPT-5204',
+        category: 'certified',
+        description: 'High-yielding medium slender grain paddy seeds with superior cooking quality.',
+        packaging_info: JSON.stringify({ bag_size: '25kg', material: 'HDPE woven bag' }),
+        certifications: ['ISTA Certified', 'State Seed Agency Approved'],
+      }).returning('*');
+
+      await trx('products').insert({
+        tenant_id: tenant.id,
+        name: 'Super Bt-II Cotton Hybrid',
+        brand_name: `${input.companyName} Hybrid`,
+        crop_type: 'Cotton',
+        seed_variety: 'RCH-659 BG-II',
+        category: 'hybrid',
+        description: 'Bollworm-resistant premium hybrid cotton seeds for semi-arid zones.',
+        packaging_info: JSON.stringify({ bag_size: '450g', material: 'Foil laminate pouch' }),
+        certifications: ['GEAC Approved', 'ICAR Certified'],
+      });
+
+      const mfgDate = new Date();
+      mfgDate.setMonth(mfgDate.getMonth() - 1);
+      const expDate = new Date();
+      expDate.setFullYear(expDate.getFullYear() + 2);
+
+      const batchNum = `${finalSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'SEED'}-BPT5204-${new Date().getFullYear()}-001`;
+
+      const [starterBatch] = await trx('seed_batches').insert({
+        tenant_id: tenant.id,
+        product_id: starterProduct.id,
+        batch_number: batchNum,
+        manufacturing_date: mfgDate,
+        expiry_date: expDate,
+        production_location: input.address || 'Central Processing Facility',
+        manufacturing_facility: `${input.companyName} Plant 1`,
+        initial_quantity: 5000,
+        current_quantity: 5000,
+        unit_of_measurement: 'packets',
+        status: 'in_inventory',
+      }).returning('*');
+
+      await trx('inventory').insert({
+        tenant_id: tenant.id,
+        batch_id: starterBatch.id,
+        holder_id: user.id,
+        holder_role: 'manufacturer',
+        quantity: 5000,
+        location: input.address || 'Central Processing Facility',
+      });
+
+      await trx('supply_chain_events').insert({
+        tenant_id: tenant.id,
+        batch_id: starterBatch.id,
+        event_type: 'manufactured',
+        actor_id: user.id,
+        actor_role: 'manufacturer',
+        source_location: input.address || 'Central Processing Facility',
+        quantity: 5000,
+      });
+
+      // Pre-seed partner accounts for instant multi-tier testing
+      const partnerPassword = await bcrypt.hash('SmartSeed@Demo2026', 12);
+      await trx('users').insert({
+        tenant_id: tenant.id,
+        email: `distributor@${finalSlug}.example`,
+        password_hash: partnerPassword,
+        first_name: 'Regional',
+        last_name: 'Distributor',
+        role: 'distributor',
+        phone: '+91-9800000001',
+        is_active: true,
+      });
+
+      await trx('users').insert({
+        tenant_id: tenant.id,
+        email: `retailer@${finalSlug}.example`,
+        password_hash: partnerPassword,
+        first_name: 'Local',
+        last_name: 'Retailer',
+        role: 'retailer',
+        phone: '+91-9800000002',
+        is_active: true,
       });
 
       return { tenant, user };

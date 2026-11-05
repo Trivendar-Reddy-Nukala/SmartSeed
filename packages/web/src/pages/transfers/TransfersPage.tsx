@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { transfersService, batchesService, usersService } from '../../services';
+import { transfersService, batchesService, usersService, inventoryService } from '../../services';
+import { useAuthStore } from '../../stores/auth.store';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -18,16 +19,51 @@ export function TransfersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const { data, isLoading } = useQuery({ queryKey: ['transfers', page, statusFilter], queryFn: () => transfersService.list({ page, pageSize: 20, status: statusFilter || undefined }) });
   const { data: batches } = useQuery({ queryKey: ['batches-all'], queryFn: () => batchesService.list({ pageSize: 100 }) });
   const { data: users } = useQuery({ queryKey: ['users-all'], queryFn: () => usersService.list({ pageSize: 100 }) });
+  const { data: myBatches } = useQuery({ queryKey: ['my-available-batches', showCreate], queryFn: inventoryService.getMyBatches, enabled: showCreate });
 
   const [form, setForm] = useState({ batchId: '', receiverId: '', quantity: 0, sourceLocation: '', destinationLocation: '', notes: '' });
 
-  const createMutation = useMutation({ mutationFn: (d: any) => transfersService.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); setShowCreate(false); toast.success('Transfer initiated'); }, onError: (e: any) => toast.error(e.response?.data?.error?.message || 'Failed') });
-  const receiveMutation = useMutation({ mutationFn: (id: string) => transfersService.receive(id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success('Batch received'); } });
-  const rejectMutation = useMutation({ mutationFn: (id: string) => transfersService.reject(id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['transfers'] }); toast.success('Transfer rejected'); } });
+  const createMutation = useMutation({
+    mutationFn: (d: any) => transfersService.create(d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-available-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      setShowCreate(false);
+      toast.success('Transfer initiated');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error?.message || 'Failed'),
+  });
+
+  const receiveMutation = useMutation({
+    mutationFn: (id: string) => transfersService.receive(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-available-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      toast.success('Batch received into inventory');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error?.message || 'Failed to accept transfer'),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) => transfersService.reject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-available-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      toast.success('Transfer rejected');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error?.message || 'Failed to reject transfer'),
+  });
 
   if (isLoading) return <PageLoader />;
 
@@ -54,24 +90,55 @@ export function TransfersPage() {
                 <th className="pb-3 font-medium">Batch</th><th className="pb-3 font-medium">From</th><th className="pb-3 font-medium">To</th><th className="pb-3 font-medium">Qty</th><th className="pb-3 font-medium">Status</th><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Actions</th>
               </tr></thead>
               <tbody>
-                {data.data.map((t: any) => (
-                  <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-3 font-medium text-green-700">{t.batch_number}</td>
-                    <td className="py-3"><p>{t.sender_first_name} {t.sender_last_name}</p><p className="text-xs text-gray-500">{t.sender_role}</p></td>
-                    <td className="py-3"><p>{t.receiver_first_name} {t.receiver_last_name}</p><p className="text-xs text-gray-500">{t.receiver_role}</p></td>
-                    <td className="py-3">{formatNumber(t.quantity)}</td>
-                    <td className="py-3"><Badge variant="status" value={t.status}>{t.status}</Badge></td>
-                    <td className="py-3 text-gray-500">{formatDate(t.created_at)}</td>
-                    <td className="py-3">
-                      {['initiated', 'dispatched'].includes(t.status) && (
-                        <div className="flex gap-1">
-                          <button className="p-1.5 rounded hover:bg-green-50 text-green-600" title="Accept" onClick={() => receiveMutation.mutate(t.id)}><Check className="w-4 h-4" /></button>
-                          <button className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Reject" onClick={() => rejectMutation.mutate(t.id)}><X className="w-4 h-4" /></button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {data.data.map((t: any) => {
+                  const canAccept = (user?.id === t.receiver_id || user?.role === 'platform_admin') && ['initiated', 'dispatched'].includes(t.status);
+                  const isSender = user?.id === t.sender_id;
+
+                  return (
+                    <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-3 font-medium text-green-700">{t.batch_number}</td>
+                      <td className="py-3"><p>{t.sender_first_name} {t.sender_last_name}</p><p className="text-xs text-gray-500">{t.sender_role}</p></td>
+                      <td className="py-3"><p>{t.receiver_first_name} {t.receiver_last_name}</p><p className="text-xs text-gray-500">{t.receiver_role}</p></td>
+                      <td className="py-3">{formatNumber(t.quantity)}</td>
+                      <td className="py-3"><Badge variant="status" value={t.status}>{t.status}</Badge></td>
+                      <td className="py-3 text-gray-500">{formatDate(t.created_at)}</td>
+                      <td className="py-3">
+                        {canAccept ? (
+                          <div className="flex gap-1.5">
+                            <button
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-colors"
+                              title="Accept Transfer"
+                              onClick={() => receiveMutation.mutate(t.id)}
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors"
+                              title="Reject Transfer"
+                              onClick={() => rejectMutation.mutate(t.id)}
+                            >
+                              <X className="w-3.5 h-3.5" /> Reject
+                            </button>
+                          </div>
+                        ) : ['initiated', 'dispatched'].includes(t.status) ? (
+                          isSender ? (
+                            <span className="inline-flex items-center text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              Awaiting Receiver
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">In Transit</span>
+                          )
+                        ) : t.status === 'received' ? (
+                          <span className="inline-flex items-center text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 font-medium">
+                            Completed
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400 capitalize">{t.status}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -80,7 +147,22 @@ export function TransfersPage() {
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Initiate Transfer">
         <form onSubmit={e => { e.preventDefault(); createMutation.mutate(form); }} className="space-y-4">
-          <Select label="Batch" value={form.batchId} onChange={e => setForm({...form, batchId: e.target.value})} options={(batches?.data || []).map((b: any) => ({ value: b.id, label: `${b.batch_number} (${formatNumber(b.current_quantity)} available)` }))} />
+          <Select
+            label="Batch"
+            value={form.batchId}
+            onChange={e => setForm({...form, batchId: e.target.value})}
+            options={
+              myBatches && myBatches.length > 0
+                ? myBatches.map((b: any) => ({
+                    value: b.id,
+                    label: `${b.batch_number} - ${b.product_name} (${formatNumber(b.my_quantity || b.available_stock || 0)} in your stock)`,
+                  }))
+                : (batches?.data || []).map((b: any) => ({
+                    value: b.id,
+                    label: `${b.batch_number} (${formatNumber(b.my_quantity ?? b.current_quantity)} in your stock)`,
+                  }))
+            }
+          />
           <Select label="Receiver" value={form.receiverId} onChange={e => setForm({...form, receiverId: e.target.value})} options={(users?.data || []).filter((u: any) => u.role !== 'platform_admin').map((u: any) => ({ value: u.id, label: `${u.first_name} ${u.last_name} (${u.role})` }))} />
           <Input label="Quantity" type="number" value={String(form.quantity)} onChange={e => setForm({...form, quantity: parseInt(e.target.value) || 0})} required />
           <Input label="Source Location" value={form.sourceLocation} onChange={e => setForm({...form, sourceLocation: e.target.value})} />

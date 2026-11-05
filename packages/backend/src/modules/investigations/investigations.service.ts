@@ -9,17 +9,20 @@ import { config } from '../../config';
 import logger from '../../config/logger';
 
 export class InvestigationsService {
-  async list(tenantId: string, page = 1, pageSize = 20, status?: string) {
+  async list(tenantId?: string, page = 1, pageSize = 20, status?: string) {
     const db = getDb();
     let query = db('investigations')
-      .where({ 'investigations.tenant_id': tenantId })
       .leftJoin('seed_batches', 'investigations.batch_id', 'seed_batches.id')
       .leftJoin('users as assignee', 'investigations.assigned_to', 'assignee.id')
       .orderBy('investigations.created_at', 'desc');
 
+    if (tenantId) {
+      query = query.where({ 'investigations.tenant_id': tenantId });
+    }
+
     if (status) query = query.where('investigations.status', status);
 
-    const countResult = await query.clone().count('investigations.id as count').first();
+    const countResult = await query.clone().clearOrder().count('investigations.id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const investigations = await query
@@ -35,13 +38,19 @@ export class InvestigationsService {
     return { data: investigations, meta: { page, pageSize, totalCount, totalPages: Math.ceil(totalCount / pageSize) } };
   }
 
-  async getById(id: string, tenantId: string) {
+  async getById(id: string, tenantId?: string) {
     const db = getDb();
-    const investigation = await db('investigations')
-      .where({ 'investigations.id': id, 'investigations.tenant_id': tenantId })
+    let query = db('investigations')
+      .where({ 'investigations.id': id })
       .leftJoin('seed_batches', 'investigations.batch_id', 'seed_batches.id')
       .leftJoin('products', 'seed_batches.product_id', 'products.id')
-      .leftJoin('users as assignee', 'investigations.assigned_to', 'assignee.id')
+      .leftJoin('users as assignee', 'investigations.assigned_to', 'assignee.id');
+
+    if (tenantId) {
+      query = query.where({ 'investigations.tenant_id': tenantId });
+    }
+
+    const investigation = await query
       .select(
         'investigations.*',
         'seed_batches.batch_number', 'seed_batches.status as batch_status',

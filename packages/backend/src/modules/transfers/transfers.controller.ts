@@ -10,14 +10,14 @@ export class TransfersController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const { page = '1', pageSize = '20', status, batchId } = req.query;
-      const result = await transfersService.list(req.tenantId!, Number(page), Number(pageSize), status as string, batchId as string);
+      const result = await transfersService.list(req.tenantId, Number(page), Number(pageSize), status as string, batchId as string);
       res.json({ success: true, ...result });
     } catch (error) { next(error); }
   }
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const transfer = await transfersService.getById(req.params.id, req.tenantId!);
+      const transfer = await transfersService.getById(req.params.id as string, req.tenantId);
       res.json({ success: true, data: transfer });
     } catch (error) { next(error); }
   }
@@ -32,24 +32,27 @@ export class TransfersController {
 
   async dispatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const transfer = await transfersService.dispatch(req.params.id, req.tenantId!, req.user!.userId);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'DISPATCH_TRANSFER', entityType: 'transfer', entityId: req.params.id });
+      const transferId = req.params.id as string;
+      const transfer = await transfersService.dispatch(transferId, req.tenantId!, req.user!.userId);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'DISPATCH_TRANSFER', entityType: 'transfer', entityId: transferId });
       res.json({ success: true, data: transfer });
     } catch (error) { next(error); }
   }
 
   async receive(req: Request, res: Response, next: NextFunction) {
     try {
-      const transfer = await transfersService.receive(req.params.id, req.tenantId!, req.user!.userId);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'RECEIVE_TRANSFER', entityType: 'transfer', entityId: req.params.id });
+      const transferId = req.params.id as string;
+      const transfer = await transfersService.receive(transferId, req.tenantId!, req.user!.userId);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'RECEIVE_TRANSFER', entityType: 'transfer', entityId: transferId });
       res.json({ success: true, data: transfer });
     } catch (error) { next(error); }
   }
 
   async reject(req: Request, res: Response, next: NextFunction) {
     try {
-      const transfer = await transfersService.reject(req.params.id, req.tenantId!, req.user!.userId, req.body.reason);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'REJECT_TRANSFER', entityType: 'transfer', entityId: req.params.id });
+      const transferId = req.params.id as string;
+      const transfer = await transfersService.reject(transferId, req.tenantId!, req.user!.userId, req.body.reason);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'REJECT_TRANSFER', entityType: 'transfer', entityId: transferId });
       res.json({ success: true, data: transfer });
     } catch (error) { next(error); }
   }

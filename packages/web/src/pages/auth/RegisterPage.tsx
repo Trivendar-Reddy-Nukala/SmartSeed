@@ -19,7 +19,13 @@ export function RegisterPage() {
     subscriptionPlan: 'starter',
   });
 
-  const update = (field: string, value: string) => setForm({ ...form, [field]: value });
+  const update = (field: string, value: string) => {
+    const updated = { ...form, [field]: value };
+    if (field === 'companyName') {
+      updated.slug = value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+    setForm(updated);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +53,6 @@ export function RegisterPage() {
 
       {step === 1 && <>
         <Input label="Company Name" value={form.companyName} onChange={e => update('companyName', e.target.value)} required />
-        <Input label="URL Slug" value={form.slug} onChange={e => update('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} helperText="e.g., greengrow-seeds" required />
         <Input label="Contact Email" type="email" value={form.contactEmail} onChange={e => update('contactEmail', e.target.value)} required />
         <Input label="Phone (optional)" value={form.contactPhone} onChange={e => update('contactPhone', e.target.value)} />
       </>}

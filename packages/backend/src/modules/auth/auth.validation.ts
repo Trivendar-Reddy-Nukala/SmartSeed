@@ -11,7 +11,7 @@ export const loginSchema = z.object({
 
 export const registerTenantSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters').max(255),
-  slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens').optional(),
   contactEmail: z.string().email('Invalid contact email'),
   contactPhone: z.string().optional(),
   address: z.string().optional(),

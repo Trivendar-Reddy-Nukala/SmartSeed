@@ -12,7 +12,7 @@ import { getDb } from '../database/connection';
  * Platform admins can override via X-Tenant-Id header.
  * All other users are restricted to their own tenant.
  */
-export function tenantContext(req: Request, res: Response, next: NextFunction): void {
+export async function tenantContext(req: Request, res: Response, next: NextFunction): Promise<void> {
   if (!req.user) {
     res.status(401).json({
       success: false,
@@ -21,7 +21,7 @@ export function tenantContext(req: Request, res: Response, next: NextFunction): 
     return;
   }
 
-  // Platform admin can access any tenant
+  // Platform admin can access any tenant or view system-wide
   if (req.user.role === UserRole.PLATFORM_ADMIN) {
     const headerTenantId = req.headers['x-tenant-id'] as string;
     req.tenantId = headerTenantId || undefined;
@@ -48,6 +48,10 @@ export function tenantContext(req: Request, res: Response, next: NextFunction): 
  */
 export function requireTenant(req: Request, res: Response, next: NextFunction): void {
   if (!req.tenantId) {
+    if (req.user?.role === UserRole.PLATFORM_ADMIN) {
+      next();
+      return;
+    }
     res.status(400).json({
       success: false,
       error: { code: 'TENANT_REQUIRED', message: 'Tenant context is required. Platform admins must provide X-Tenant-Id header.' },

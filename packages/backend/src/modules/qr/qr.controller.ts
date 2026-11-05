@@ -18,7 +18,7 @@ export class QrController {
   /** Public endpoint — no auth required */
   async verify(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await qrService.verify(req.params.publicToken, {
+      const result = await qrService.verify(req.params.publicToken as string, {
         latitude: req.query.lat ? parseFloat(req.query.lat as string) : undefined,
         longitude: req.query.lng ? parseFloat(req.query.lng as string) : undefined,
         ipAddress: req.ip,
@@ -31,22 +31,23 @@ export class QrController {
 
   async listByBatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const qrCodes = await qrService.listByBatch(req.params.batchId, req.tenantId!);
+      const qrCodes = await qrService.listByBatch(req.params.batchId as string, req.tenantId!);
       res.json({ success: true, data: qrCodes });
     } catch (error) { next(error); }
   }
 
   async revoke(req: Request, res: Response, next: NextFunction) {
     try {
-      const qr = await qrService.revoke(req.params.id, req.tenantId!);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'REVOKE_QR', entityType: 'qr_code', entityId: req.params.id });
+      const qrId = req.params.id as string;
+      const qr = await qrService.revoke(qrId, req.tenantId!);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'REVOKE_QR', entityType: 'qr_code', entityId: qrId });
       res.json({ success: true, data: qr });
     } catch (error) { next(error); }
   }
 
   async getScanHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const scans = await qrService.getScanHistory(req.params.id);
+      const scans = await qrService.getScanHistory(req.params.id as string);
       res.json({ success: true, data: scans });
     } catch (error) { next(error); }
   }

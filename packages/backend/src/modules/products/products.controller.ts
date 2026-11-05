@@ -17,7 +17,7 @@ export class ProductsController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const product = await productsService.getById(req.params.id, req.tenantId!);
+      const product = await productsService.getById(req.params.id as string, req.tenantId!);
       res.json({ success: true, data: product });
     } catch (error) { next(error); }
   }
@@ -32,16 +32,18 @@ export class ProductsController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const product = await productsService.update(req.params.id, req.tenantId!, req.body);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'UPDATE_PRODUCT', entityType: 'product', entityId: req.params.id, newValues: req.body });
+      const productId = req.params.id as string;
+      const product = await productsService.update(productId, req.tenantId!, req.body);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'UPDATE_PRODUCT', entityType: 'product', entityId: productId, newValues: req.body });
       res.json({ success: true, data: product });
     } catch (error) { next(error); }
   }
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await productsService.delete(req.params.id, req.tenantId!);
-      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'DELETE_PRODUCT', entityType: 'product', entityId: req.params.id });
+      const productId = req.params.id as string;
+      await productsService.delete(productId, req.tenantId!);
+      await auditService.log({ tenantId: req.tenantId, userId: req.user!.userId, action: 'DELETE_PRODUCT', entityType: 'product', entityId: productId });
       res.json({ success: true, data: { message: 'Product deleted' } });
     } catch (error) { next(error); }
   }

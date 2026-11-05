@@ -16,7 +16,7 @@ export class UsersController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await usersService.getById(req.params.id, req.tenantId);
+      const user = await usersService.getById(req.params.id as string, req.tenantId);
       res.json({ success: true, data: user });
     } catch (error) { next(error); }
   }
@@ -30,14 +30,14 @@ export class UsersController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await usersService.update(req.params.id, req.tenantId, req.body);
+      const user = await usersService.update(req.params.id as string, req.tenantId, req.body);
       res.json({ success: true, data: user });
     } catch (error) { next(error); }
   }
 
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await usersService.updateStatus(req.params.id, req.tenantId, req.body.isActive);
+      const user = await usersService.updateStatus(req.params.id as string, req.tenantId, req.body.isActive);
       res.json({ success: true, data: user });
     } catch (error) { next(error); }
   }

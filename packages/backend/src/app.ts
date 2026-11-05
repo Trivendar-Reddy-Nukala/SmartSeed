@@ -33,6 +33,8 @@ import riskRoutes from './modules/risk/risk.routes';
 import investigationRoutes from './modules/investigations/investigations.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
+import salesRoutes from './modules/sales/sales.routes';
+import inventoryRoutes from './modules/inventory/inventory.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -68,6 +70,8 @@ app.use('/api/risk', riskRoutes);
 app.use('/api/investigations', investigationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // ---- Error Handling ----
 app.use(notFoundHandler);

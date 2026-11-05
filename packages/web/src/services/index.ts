@@ -86,3 +86,15 @@ export const notificationsService = {
   markAllAsRead: () => api.patch('/notifications/read-all'),
 };
 
+export const salesService = {
+  list: (params?: any) => api.get('/sales', { params }).then(r => r.data),
+  create: (data: any) => api.post('/sales', data).then(r => r.data.data),
+  getAvailableBatches: () => api.get('/sales/available-batches').then(r => r.data.data),
+};
+
+export const inventoryService = {
+  list: (params?: any) => api.get('/inventory', { params }).then(r => r.data),
+  getMyBatches: () => api.get('/inventory/my-batches').then(r => r.data.data),
+  getSummary: () => api.get('/inventory/summary').then(r => r.data.data),
+};
+

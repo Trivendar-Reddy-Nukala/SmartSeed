@@ -22,7 +22,7 @@ export class UsersService {
       });
     }
 
-    const countResult = await query.clone().count('id as count').first();
+    const countResult = await query.clone().clearOrder().count('id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const users = await query
@@ -56,7 +56,7 @@ export class UsersService {
       last_name: input.lastName,
       role: input.role,
       phone: input.phone,
-    }).returning('id', 'tenant_id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'created_at' as any);
+    }).returning(['id', 'tenant_id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'created_at']);
 
     return user;
   }

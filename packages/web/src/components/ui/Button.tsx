@@ -6,6 +6,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
+  isLoading?: boolean;
   children: React.ReactNode;
 }
 
@@ -23,14 +24,16 @@ const sizes = {
   lg: 'px-6 py-3 text-base',
 };
 
-export function Button({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', size = 'md', loading, isLoading, className, children, disabled, ...props }: ButtonProps) {
+  const isLoadingState = loading ?? isLoading ?? false;
+
   return (
     <button
       className={cn('inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed', variants[variant], sizes[size], className)}
-      disabled={disabled || loading}
+      disabled={disabled || isLoadingState}
       {...props}
     >
-      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {isLoadingState && <Loader2 className="w-4 h-4 animate-spin" />}
       {children}
     </button>
   );

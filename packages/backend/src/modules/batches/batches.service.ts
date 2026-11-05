@@ -9,12 +9,15 @@ import { auditService } from '../audit/audit.service';
 import type { CreateBatchInput } from './batches.validation';
 
 export class BatchesService {
-  async list(tenantId: string, page = 1, pageSize = 20, search?: string, status?: string, productId?: string) {
+  async list(tenantId?: string, page = 1, pageSize = 20, search?: string, status?: string, productId?: string, userId?: string) {
     const db = getDb();
     let query = db('seed_batches')
-      .where({ 'seed_batches.tenant_id': tenantId })
       .leftJoin('products', 'seed_batches.product_id', 'products.id')
       .orderBy('seed_batches.created_at', 'desc');
+
+    if (tenantId) {
+      query = query.where({ 'seed_batches.tenant_id': tenantId });
+    }
 
     if (search) {
       query = query.where((qb) => {
@@ -25,10 +28,10 @@ export class BatchesService {
     if (status) query = query.where('seed_batches.status', status);
     if (productId) query = query.where('seed_batches.product_id', productId);
 
-    const countResult = await query.clone().count('seed_batches.id as count').first();
+    const countResult = await query.clone().clearOrder().count('seed_batches.id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
-    const batches = await query
+    let selectQuery = query
       .select(
         'seed_batches.*',
         'products.name as product_name',
@@ -36,18 +39,30 @@ export class BatchesService {
         'products.crop_type',
         'products.seed_variety',
       )
-      .select(db.raw(`(SELECT json_build_object('score', rs.score, 'risk_level', rs.risk_level) FROM risk_scores rs WHERE rs.batch_id = seed_batches.id ORDER BY rs.calculated_at DESC LIMIT 1) as latest_risk`))
+      .select(db.raw(`(SELECT json_build_object('score', rs.score, 'risk_level', rs.risk_level) FROM risk_scores rs WHERE rs.batch_id = seed_batches.id ORDER BY rs.calculated_at DESC LIMIT 1) as latest_risk`));
+
+    if (userId) {
+      selectQuery = selectQuery.select(db.raw(`COALESCE((SELECT quantity FROM inventory WHERE inventory.batch_id = seed_batches.id AND inventory.holder_id = ? LIMIT 1), 0)::int as my_quantity`, [userId]));
+    }
+
+    const batches = await selectQuery
       .offset((page - 1) * pageSize)
       .limit(pageSize);
 
     return { data: batches, meta: { page, pageSize, totalCount, totalPages: Math.ceil(totalCount / pageSize) } };
   }
 
-  async getById(id: string, tenantId: string) {
+  async getById(id: string, tenantId?: string) {
     const db = getDb();
-    const batch = await db('seed_batches')
-      .where({ 'seed_batches.id': id, 'seed_batches.tenant_id': tenantId })
-      .leftJoin('products', 'seed_batches.product_id', 'products.id')
+    let query = db('seed_batches')
+      .where({ 'seed_batches.id': id })
+      .leftJoin('products', 'seed_batches.product_id', 'products.id');
+
+    if (tenantId) {
+      query = query.where({ 'seed_batches.tenant_id': tenantId });
+    }
+
+    const batch = await query
       .select('seed_batches.*', 'products.name as product_name', 'products.brand_name', 'products.crop_type', 'products.seed_variety', 'products.description as product_description', 'products.certifications as product_certifications')
       .first();
 
@@ -133,10 +148,16 @@ export class BatchesService {
     return result;
   }
 
-  async getTimeline(batchId: string, tenantId: string) {
+  async getTimeline(batchId: string, tenantId?: string) {
     const db = getDb();
-    const events = await db('supply_chain_events')
-      .where({ batch_id: batchId, tenant_id: tenantId })
+    let query = db('supply_chain_events')
+      .where({ 'supply_chain_events.batch_id': batchId });
+
+    if (tenantId) {
+      query = query.where({ 'supply_chain_events.tenant_id': tenantId });
+    }
+
+    const events = await query
       .leftJoin('users', 'supply_chain_events.actor_id', 'users.id')
       .select(
         'supply_chain_events.*',
@@ -149,30 +170,28 @@ export class BatchesService {
     return events;
   }
 
-  async getPassport(batchId: string, tenantId: string) {
+  async getPassport(batchId: string, tenantId?: string) {
     const db = getDb();
 
     const batch = await this.getById(batchId, tenantId);
     const events = await this.getTimeline(batchId, tenantId);
-    const tenant = await db('tenants').where({ id: tenantId }).first();
+    const effectiveTenantId = batch.tenant_id || tenantId;
+    const tenant = effectiveTenantId ? await db('tenants').where({ id: effectiveTenantId }).first() : null;
 
     // Get latest risk score
-    const riskScore = await db('risk_scores')
-      .where({ batch_id: batchId, tenant_id: tenantId })
-      .orderBy('calculated_at', 'desc')
-      .first();
+    let riskQuery = db('risk_scores').where({ batch_id: batchId });
+    if (effectiveTenantId) riskQuery = riskQuery.where({ tenant_id: effectiveTenantId });
+    const riskScore = await riskQuery.orderBy('calculated_at', 'desc').first();
 
     // Get blockchain transaction count
-    const txCount = await db('blockchain_transactions')
-      .where({ batch_id: batchId, tenant_id: tenantId })
-      .count('id as count')
-      .first();
+    let txQuery = db('blockchain_transactions').where({ batch_id: batchId });
+    if (effectiveTenantId) txQuery = txQuery.where({ tenant_id: effectiveTenantId });
+    const txCount = await txQuery.count('id as count').first();
 
     // Get active investigations
-    const activeInvestigation = await db('investigations')
-      .where({ batch_id: batchId, tenant_id: tenantId })
-      .whereNotIn('status', ['resolved', 'false_positive'])
-      .first();
+    let invQuery = db('investigations').where({ batch_id: batchId }).whereNotIn('status', ['resolved', 'false_positive']);
+    if (effectiveTenantId) invQuery = invQuery.where({ tenant_id: effectiveTenantId });
+    const activeInvestigation = await invQuery.first();
 
     const expiryDate = new Date(batch.expiry_date);
     const now = new Date();

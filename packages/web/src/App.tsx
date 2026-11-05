@@ -1,26 +1,27 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
-import DashboardLayout from '@/layouts/DashboardLayout';
-import AuthLayout from '@/layouts/AuthLayout';
-import LoginPage from '@/pages/auth/LoginPage';
-import RegisterPage from '@/pages/auth/RegisterPage';
-import DashboardPage from '@/pages/dashboard/DashboardPage';
-import ProductsPage from '@/pages/products/ProductsPage';
-import BatchesPage from '@/pages/batches/BatchesPage';
-import BatchDetailPage from '@/pages/batches/BatchDetailPage';
-import TransfersPage from '@/pages/transfers/TransfersPage';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { AuthLayout } from '@/layouts/AuthLayout';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { DashboardPage } from '@/pages/dashboard/DashboardPage';
+import { ProductsPage } from '@/pages/products/ProductsPage';
+import { BatchesPage } from '@/pages/batches/BatchesPage';
+import { BatchDetailPage } from '@/pages/batches/BatchDetailPage';
+import { TransfersPage } from '@/pages/transfers/TransfersPage';
 import QrManagementPage from '@/pages/qr/QrManagementPage';
 import InventoryPage from '@/pages/inventory/InventoryPage';
-import RiskDashboardPage from '@/pages/risk/RiskDashboardPage';
-import InvestigationsPage from '@/pages/investigations/InvestigationsPage';
-import InvestigationDetailPage from '@/pages/investigations/InvestigationDetailPage';
+import { RiskDashboardPage } from '@/pages/risk/RiskDashboardPage';
+import { InvestigationsPage } from '@/pages/investigations/InvestigationsPage';
+import { InvestigationDetailPage } from '@/pages/investigations/InvestigationDetailPage';
 import AlertsPage from '@/pages/alerts/AlertsPage';
-import UsersPage from '@/pages/users/UsersPage';
-import TenantsPage from '@/pages/tenants/TenantsPage';
+import { UsersPage } from '@/pages/users/UsersPage';
+import { TenantsPage } from '@/pages/tenants/TenantsPage';
 import AnalyticsPage from '@/pages/analytics/AnalyticsPage';
-import SettingsPage from '@/pages/settings/SettingsPage';
-import NotificationsPage from '@/pages/notifications/NotificationsPage';
-import PublicVerificationPage from '@/pages/verify/PublicVerificationPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
+import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
+import { PublicVerificationPage } from '@/pages/verify/PublicVerificationPage';
+import { RetailSalesPage } from '@/pages/sales/RetailSalesPage';
 
 /**
  * ProtectedRoute — Redirects to login if user is not authenticated
@@ -106,6 +107,7 @@ function App() {
         <Route path="batches" element={<BatchesPage />} />
         <Route path="batches/:id" element={<BatchDetailPage />} />
         <Route path="transfers" element={<TransfersPage />} />
+        <Route path="sales" element={<RetailSalesPage />} />
         <Route path="qr" element={<QrManagementPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="risk" element={<RiskDashboardPage />} />

@@ -23,14 +23,14 @@ export class RiskController {
 
   async getBatchRisk(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await riskService.getBatchRisk(req.params.batchId, req.tenantId!);
+      const data = await riskService.getBatchRisk(req.params.batchId as string, req.tenantId!);
       res.json({ success: true, data });
     } catch (error) { next(error); }
   }
 
   async assessBatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await riskService.assessBatch(req.params.batchId, req.tenantId!);
+      const result = await riskService.assessBatch(req.params.batchId as string, req.tenantId!);
       res.json({ success: true, data: result });
     } catch (error) { next(error); }
   }

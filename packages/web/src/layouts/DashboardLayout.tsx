@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import {
   LayoutDashboard, Package, Boxes, ArrowLeftRight, QrCode, Warehouse,
   ShieldAlert, Search as SearchIcon, AlertTriangle, Users, Building2, BarChart3,
-  Settings, Bell, Menu, X, LogOut, ChevronDown, Leaf,
+  Settings, Bell, Menu, LogOut, ChevronDown, Leaf, ShoppingCart
 } from 'lucide-react';
 
 const roleNavItems: Record<string, { label: string; icon: any; path: string }[]> = {
@@ -12,6 +12,7 @@ const roleNavItems: Record<string, { label: string; icon: any; path: string }[]>
     { label: 'Overview', icon: LayoutDashboard, path: '/' },
     { label: 'Organizations', icon: Building2, path: '/tenants' },
     { label: 'Users', icon: Users, path: '/users' },
+    { label: 'Farmer Sales', icon: ShoppingCart, path: '/sales' },
     { label: 'Risk Management', icon: ShieldAlert, path: '/risk' },
     { label: 'Investigations', icon: SearchIcon, path: '/investigations' },
     { label: 'Alerts', icon: AlertTriangle, path: '/alerts' },
@@ -25,6 +26,8 @@ const roleNavItems: Record<string, { label: string; icon: any; path: string }[]>
     { label: 'QR Codes', icon: QrCode, path: '/qr' },
     { label: 'Inventory', icon: Warehouse, path: '/inventory' },
     { label: 'Transfers', icon: ArrowLeftRight, path: '/transfers' },
+    { label: 'Farmer Sales', icon: ShoppingCart, path: '/sales' },
+    { label: 'Users & Roles', icon: Users, path: '/users' },
     { label: 'Risk Alerts', icon: ShieldAlert, path: '/risk' },
     { label: 'Analytics', icon: BarChart3, path: '/analytics' },
   ],
@@ -35,10 +38,17 @@ const roleNavItems: Record<string, { label: string; icon: any; path: string }[]>
     { label: 'Transfers', icon: ArrowLeftRight, path: '/transfers' },
     { label: 'Alerts', icon: AlertTriangle, path: '/alerts' },
   ],
-  retailer: [
+  wholesaler: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { label: 'Inventory', icon: Warehouse, path: '/inventory' },
-    { label: 'Received', icon: Boxes, path: '/transfers' },
+    { label: 'Transfers', icon: ArrowLeftRight, path: '/transfers' },
+    { label: 'Alerts', icon: AlertTriangle, path: '/alerts' },
+  ],
+  retailer: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { label: 'Sell to Farmers', icon: ShoppingCart, path: '/sales' },
+    { label: 'Inventory', icon: Warehouse, path: '/inventory' },
+    { label: 'Received Batches', icon: Boxes, path: '/transfers' },
     { label: 'Alerts', icon: AlertTriangle, path: '/alerts' },
   ],
 };

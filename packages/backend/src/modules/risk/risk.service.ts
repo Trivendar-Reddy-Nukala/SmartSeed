@@ -108,7 +108,7 @@ export class RiskService {
       query = query.where('latest_risk.risk_level', riskLevel);
     }
 
-    const countResult = await query.clone().count('seed_batches.id as count').first();
+    const countResult = await query.clone().clearOrder().count('seed_batches.id as count').first();
     const totalCount = parseInt(countResult?.count as string || '0', 10);
 
     const batches = await query
